@@ -1,0 +1,143 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: dotnetcore3.1
+    Architectures:
+      - x86_64
+    MemorySize: 256
+    Environment:
+        Variables:
+            SERVICE: bookings
+            DATABASE_CONNECTION_SECRET_ID: !Ref SecretArn
+    VpcConfig:
+        SubnetIds:
+          - !Ref PrivateSubnet1
+          - !Ref PrivateSubnet2
+        SecurityGroupIds:
+          - !Ref SecurityGroup
+    AutoPublishAlias: live
+    DeploymentPreference:
+      Type: Canary10Percent5Minutes
+
+Parameters:
+  EnvironmentName:
+    Description: An environment name that is prefixed to resource names
+    Type: String
+    Default: dotnet-to-lambda
+  SecretArn:
+    Description: 'Required. Database secret ARN'
+    Type: 'String'
+  PrivateSubnet1:
+    Description: 'Required. Private subnet 1. Output from cdk deploy'
+    Type: 'String'
+  PrivateSubnet2:
+    Description: 'Required. Private subnet 2. Output from cdk deploy'
+    Type: 'String'
+  SecurityGroup:
+    Description: 'Required. Security group. Output from cdk deploy'
+    Type: 'String'
+
+Resources:
+  ReserveBookingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/ReserveBooking/
+      Handler: ReserveBooking::ReserveBooking.Function::FunctionHandler
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref SecretArn
+        - SSMParameterReadPolicy:
+            ParameterName: dotnet-to-lambda-dev
+      Events:
+        ReserveBookingApi:
+          Type: Api
+          Properties:
+            Path: /booking/reserve
+            Method: post
+            
+  CancelBookingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/CancelBooking/
+      Handler: CancelBooking::CancelBooking.Function::FunctionHandler
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref SecretArn
+        - SSMParameterReadPolicy:
+            ParameterName: dotnet-to-lambda-dev
+      Events:
+        CancelBookingApi:
+          Type: Api
+          Properties:
+            Path: /booking/cancel
+            Method: put
+            
+  ConfirmBookingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/ConfirmBooking/
+      Handler: ConfirmBooking::ConfirmBooking.Function::FunctionHandler
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref SecretArn
+        - SSMParameterReadPolicy:
+            ParameterName: dotnet-to-lambda-dev
+      Events:
+        ConfirmBookingApi:
+          Type: Api
+          Properties:
+            Path: /booking/confirm
+            Method: post
+            
+  ListForCustomerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/ListForCustomer/
+      Handler: ListForCustomer::ListForCustomer.Function::FunctionHandler
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref SecretArn
+        - SSMParameterReadPolicy:
+            ParameterName: dotnet-to-lambda-dev
+      Events:
+        ListForCustomerApi:
+          Type: Api
+          Properties:
+            Path: /customer/{customerId}
+            Method: get
+            
+  RetrieveFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/Retrieve/
+      Handler: Retrieve::Retrieve.Function::FunctionHandler
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref SecretArn
+        - SSMParameterReadPolicy:
+            ParameterName: dotnet-to-lambda-dev
+      Events:
+        RetrieveApi:
+          Type: Api
+          Properties:
+            Path: /booking/{bookingId}
+            Method: get
+            
+  ApplyDatabaseMigrationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/ApplyDatabaseMigrations/
+      Handler: ApplyDatabaseMigrations::ApplyDatabaseMigrations.Function::FunctionHandler
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref SecretArn
+        - SSMParameterReadPolicy:
+            ParameterName: dotnet-to-lambda-dev
+
+Outputs:
+  BookingApi:
+    Description: "API Gateway endpoint URL for Prod stage for reserving bookings"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"

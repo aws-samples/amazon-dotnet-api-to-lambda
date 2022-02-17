@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.AppConfig" Version="3.7.1.19" />
+    <PackageReference Include="AWSSDK.SecretsManager" Version="3.7.2" />
+	<PackageReference Include="Amazon.Lambda.Logging.AspNetCore" Version="3.0.1" />
+	<PackageReference Include="AWSSDK.SimpleSystemsManagement" Version="3.7.12.6" />
+	<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.22" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.22" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.22" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.22" />
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
+    <PackageReference Include="System.Text.Json" Version="6.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\DotnetToLambda.Api\DotnetToLambda.Core\DotnetToLambda.Core.csproj" />
+  </ItemGroup>
+
+</Project>
