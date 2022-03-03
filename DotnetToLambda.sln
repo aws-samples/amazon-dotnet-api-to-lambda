@@ -12,6 +12,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DotnetToLambda.Serverless", "DotnetToLambda.Serverless", "{163A600C-DD7F-436D-A8B5-32F69D7041C5}"
 	ProjectSection(SolutionItems) = preProject
 		src\serverless\DotnetToLambda.Serverless\template.yaml = src\serverless\DotnetToLambda.Serverless\template.yaml
+		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReserveBooking", "src\serverless\DotnetToLambda.Serverless\src\ReserveBooking\ReserveBooking.csproj", "{BB9CACF8-8420-42E6-9AF6-7E90360C48E7}"

@@ -6,53 +6,45 @@ using System.Threading.Tasks;
 
 using Amazon.Lambda.APIGatewayEvents;
 using Amazon.Lambda.Core;
+using Amazon.Lambda.RuntimeSupport;
+using Amazon.Lambda.Serialization.SystemTextJson;
 using DotnetToLambda.Core.ViewModels;
 using DotnetToLambda.Core.Models;
 using DotnetToLambda.Serverless.Config;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-// Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
-[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
+[assembly: LambdaSerializer(typeof(SourceGeneratorLambdaJsonSerializer<ApiGatewayProxyJsonSerializerContext>))]
 
-namespace ListForCustomer
+ServerlessConfig.ConfigureServices();
+
+var _bookingRepository = ServerlessConfig.Services.GetRequiredService<IBookingRepository>();
+
+var handler = async (APIGatewayProxyRequest apigProxyEvent, ILambdaContext context) =>
 {
-    public class Function
+    if (!apigProxyEvent.PathParameters.ContainsKey("customerId"))
     {
-        private readonly IBookingRepository _bookingRepository;
-        private readonly ILogger<Function> _logger;
-        
-        public Function()
+        return new APIGatewayProxyResponse
         {
-            ServerlessConfig.ConfigureServices();
-
-            this._bookingRepository = ServerlessConfig.Services.GetRequiredService<IBookingRepository>();
-            this._logger = ServerlessConfig.Services.GetRequiredService<ILogger<Function>>();
-        }
-        
-        public async Task<APIGatewayProxyResponse> FunctionHandler(APIGatewayProxyRequest apigProxyEvent, ILambdaContext context)
-        {
-            if (!apigProxyEvent.PathParameters.ContainsKey("customerId"))
-            {
-                return new APIGatewayProxyResponse
-                {
-                    StatusCode = 400,
-                    Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
-                };
-            }
-
-            var customerId = apigProxyEvent.PathParameters["customerId"];
-            
-            this._logger.LogInformation($"Received request to list bookings for: {customerId}");
-
-            var customerBookings = await this._bookingRepository.ListForCustomer(customerId);
-            
-            return new APIGatewayProxyResponse
-            {
-                Body = JsonSerializer.Serialize(customerBookings),
-                StatusCode = 200,
-                Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
-            };
-        }
+            StatusCode = 400,
+            Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
+        };
     }
-}
+
+    var customerId = apigProxyEvent.PathParameters["customerId"];
+            
+    context.Logger.LogInformation($"Received request to list bookings for: {customerId}");
+
+    var customerBookings = await _bookingRepository.ListForCustomer(customerId);
+            
+    return new APIGatewayProxyResponse
+    {
+        Body = JsonSerializer.Serialize(customerBookings),
+        StatusCode = 200,
+        Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
+    };  
+};
+
+await LambdaBootstrapBuilder.Create(handler, new DefaultLambdaJsonSerializer())
+    .Build()
+    .RunAsync();

@@ -1,10 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Amazon.Lambda.APIGatewayEvents" Version="2.4.0" />
     <PackageReference Include="AWSSDK.AppConfig" Version="3.7.1.19" />
     <PackageReference Include="AWSSDK.SecretsManager" Version="3.7.2" />
 	<PackageReference Include="Amazon.Lambda.Logging.AspNetCore" Version="3.0.1" />

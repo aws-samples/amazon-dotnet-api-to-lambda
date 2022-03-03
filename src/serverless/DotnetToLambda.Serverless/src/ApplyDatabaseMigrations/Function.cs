@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 using Amazon.Lambda.APIGatewayEvents;
 using Amazon.Lambda.Core;
+using Amazon.Lambda.RuntimeSupport;
+using Amazon.Lambda.Serialization.SystemTextJson;
 using DotnetToLambda.Core.ViewModels;
 using DotnetToLambda.Core.Models;
 using DotnetToLambda.Serverless.Config;
@@ -14,38 +17,27 @@ using Microsoft.Extensions.Logging;
 using DotnetToLambda.Core.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Org.BouncyCastle.Bcpg;
 
-// Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
-[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
+[assembly: LambdaSerializer(typeof(SourceGeneratorLambdaJsonSerializer<ApiGatewayProxyJsonSerializerContext>))]
 
-namespace ApplyDatabaseMigrations
+ServerlessConfig.ConfigureServices();
+
+var _bookingContext= ServerlessConfig.Services.GetRequiredService<BookingContext>();
+var _databaseConnection = ServerlessConfig.Services.GetRequiredService<DatabaseConnection>();
+var _configuration = ServerlessConfig.Services.GetRequiredService<IConfiguration>();
+
+var handler = async (string input, ILambdaContext context) =>
 {
-    public class Function
-    {
-        private readonly BookingContext _bookingContext;
-        private readonly ILogger<Function> _logger;
-        private readonly IConfiguration _configuration;
-        private readonly DatabaseConnection _databaseConnection;
-        
-        public Function()
-        {
-            ServerlessConfig.ConfigureServices();
+    context.Logger.LogInformation("Starting database migration");
+    context.Logger.LogInformation(_databaseConnection.ToString());
+    context.Logger.LogInformation(_configuration["test"]);
 
-            this._bookingContext= ServerlessConfig.Services.GetRequiredService<BookingContext>();
-            this._logger = ServerlessConfig.Services.GetRequiredService<ILogger<Function>>();
-            this._databaseConnection = ServerlessConfig.Services.GetRequiredService<DatabaseConnection>();
-            this._configuration = ServerlessConfig.Services.GetRequiredService<IConfiguration>();
-        }
-        
-        public void FunctionHandler(string input, ILambdaContext context)
-        {
-            this._logger.LogInformation("Starting database migration");
-            this._logger.LogInformation(this._databaseConnection.ToString());
-            this._logger.LogInformation(this._configuration["test"]);
+    _bookingContext.Database.Migrate();
 
-            this._bookingContext.Database.Migrate();
+    context.Logger.LogInformation("Migration applied");
+};
 
-            this._logger.LogInformation("Migration applied");
-        }
-    }
-}
+await LambdaBootstrapBuilder.Create(handler, new DefaultLambdaJsonSerializer())
+    .Build()
+    .RunAsync();
