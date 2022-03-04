@@ -22,9 +22,19 @@ cd .\src\DotnetToLambda.Api\DotnetToLambda.Api\
 dotnet run
 ```
 
-3. Make a GET request as per below to validate the API is online
+3. Make a POST request to http://localhost:5000/booking/reserve with the below body:
+
+```json
+{
+    "OutboundFlightId": "1234567",
+    "CustomerId": "customername",
+    "ChargeId": "98765"
+}
+```
+
+4. Make a GET request as per below to validate the API is online, you should receive back on record.
 ``` bash
-curl http://localhost:5000/booking/customer/jamesuk
+curl http://localhost:5000/booking/customer/customername
 ```
 
 ## Serverless Deployment
