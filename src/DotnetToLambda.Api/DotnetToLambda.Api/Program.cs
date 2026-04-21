@@ -1,26 +1,38 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using DotnetToLambda.Core.Models;
+using DotnetToLambda.Core.Infrastructure;
+using DotnetToLambda.Core.Services;
+using Microsoft.EntityFrameworkCore;
 
-namespace DotnetToLambda.Api
+var builder = WebApplication.CreateBuilder(args);
+
+var databaseConnection =
+    new DatabaseConnection(builder.Configuration.GetConnectionString("DatabaseConnection")!);
+
+builder.Services.AddSingleton(databaseConnection);
+
+builder.Services.AddDbContext<BookingContext>(options =>
+    options.UseMySQL(databaseConnection.ToString()));
+
+builder.Services.AddTransient<IBookingRepository, BookingRepository>();
+builder.Services.AddHttpClient<ICustomerService, CustomerService>();
+
+builder.Services.AddControllers();
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
 {
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
-            CreateHostBuilder(args).Build().Run();
-        }
-
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
-    }
+    app.UseDeveloperExceptionPage();
 }
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<BookingContext>();
+    context.Database.Migrate();
+}
+
+app.UseRouting();
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();
