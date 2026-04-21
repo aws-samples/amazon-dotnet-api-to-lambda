@@ -1,34 +1,32 @@
 ﻿using DotnetToLambda.Core.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 
-namespace DotnetToLambda.Core.Infrastructure
+namespace DotnetToLambda.Core.Infrastructure;
+
+public class BookingContext : DbContext
 {
-    public class BookingContext : DbContext
+    private readonly DatabaseConnection _connection;
+
+    public BookingContext(DatabaseConnection connection)
     {
-        private readonly DatabaseConnection _connection;
+        _connection = connection;
+    }
 
-        public BookingContext(DatabaseConnection connection)
-        {
-            this._connection = connection;
-        }
-        
-        public DbSet<Booking> Bookings { get; set; }
+    public DbSet<Booking> Bookings { get; set; } = null!;
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            optionsBuilder.UseMySQL(this._connection.ToString());
-        }
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.UseMySQL(_connection.ToString());
+    }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<Booking>().ToTable("Bookings");
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Booking>().ToTable("Bookings");
 
-            modelBuilder.Entity<Booking>()
-                .HasKey(b => b.BookingId).HasName("PK_BookingId");
-            modelBuilder.Entity<Booking>()
-                .HasIndex(b => b.CustomerId)
-                .HasName("UX_Booking_CustomerId");
-        }
+        modelBuilder.Entity<Booking>()
+            .HasKey(b => b.BookingId).HasName("PK_BookingId");
+        modelBuilder.Entity<Booking>()
+            .HasIndex(b => b.CustomerId)
+            .HasDatabaseName("UX_Booking_CustomerId");
     }
 }
